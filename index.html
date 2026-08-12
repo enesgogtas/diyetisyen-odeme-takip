@@ -1,418 +1,305 @@
-<!DOCTYPE html>
+               <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2563eb">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#2563eb"
+  >
+
+  <meta
+    name="description"
+    content="Hasta ve ödeme takip uygulaması"
+  >
+
   <title>Hasta Ödeme Takip</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
+  <link rel="manifest" href="manifest.json">
 
-    body {
-      background: #f5f7fb;
-      color: #1f2937;
-    }
-
-    .app {
-      max-width: 600px;
-      margin: auto;
-      min-height: 100vh;
-      background: #ffffff;
-    }
-
-    header {
-      background: #2563eb;
-      color: white;
-      padding: 22px 18px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    header h1 {
-      font-size: 22px;
-      margin-bottom: 14px;
-    }
-
-    .search {
-      width: 100%;
-      padding: 13px 15px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      outline: none;
-    }
-
-    .content {
-      padding: 18px;
-      padding-bottom: 90px;
-    }
-
-    .empty {
-      text-align: center;
-      padding: 60px 20px;
-      color: #6b7280;
-    }
-
-    .empty-icon {
-      font-size: 50px;
-      margin-bottom: 15px;
-    }
-
-    .patient-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 7px rgba(0,0,0,0.04);
-      cursor: pointer;
-    }
-
-    .patient-card:active {
-      transform: scale(0.99);
-    }
-
-    .patient-name {
-      font-size: 17px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .patient-info {
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .bottom-button {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 36px);
-      max-width: 564px;
-      padding: 15px;
-      border: none;
-      border-radius: 12px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 5px 15px rgba(37,99,235,0.3);
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 100;
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-box {
-      background: white;
-      width: 100%;
-      max-width: 600px;
-      border-radius: 20px 20px 0 0;
-      padding: 22px;
-    }
-
-    .modal-box h2 {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: bold;
-      margin-bottom: 7px;
-    }
-
-    input {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      font-size: 15px;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: #2563eb;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 13px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .btn-cancel {
-      background: #e5e7eb;
-      color: #374151;
-    }
-
-    .btn-save {
-      background: #2563eb;
-      color: white;
-    }
-  </style>
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
 
 <body>
 
-<div class="app">
+  <div id="app">
 
-  <header>
-    <h1>Hasta Ödeme Takip</h1>
-    <input
-      type="text"
-      id="searchInput"
-      class="search"
-      placeholder="Hasta ara..."
-      oninput="renderPatients()"
-    >
-  </header>
+    <!-- ANA SAYFA -->
 
-  <main class="content">
-    <div id="patientList"></div>
-  </main>
+    <section id="homePage" class="page">
 
-  <button class="bottom-button" onclick="openPatientModal()">
-    + Yeni Hasta Ekle
-  </button>
+      <header class="top-header">
 
-</div>
+        <div>
+          <h1>Hasta Takip</h1>
+          <p>Ödeme takip sistemi</p>
+        </div>
 
-<!-- Hasta Ekleme Penceresi -->
-<div class="modal" id="patientModal">
+      </header>
 
-  <div class="modal-box">
 
-    <h2>Yeni Hasta</h2>
+      <main class="container">
 
-    <label for="patientName">Hasta Adı Soyadı</label>
-    <input
-      type="text"
-      id="patientName"
-      placeholder="Örn. Ahmet Yılmaz"
-    >
+        <!-- ARAMA -->
 
-    <label for="patientPhone">Telefon</label>
-    <input
-      type="tel"
-      id="patientPhone"
-      placeholder="05xx xxx xx xx"
-    >
+        <div class="search-box">
 
-    <label for="patientPrice">Haftalık Ücret</label>
-    <input
-      type="number"
-      id="patientPrice"
-      placeholder="Örn. 750"
-    >
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Hasta ara..."
+          >
 
-    <div class="buttons">
-      <button class="btn btn-cancel" onclick="closePatientModal()">
-        İptal
+        </div>
+
+
+        <!-- HASTA LİSTESİ -->
+
+        <div
+          id="patientList"
+          class="patient-list"
+        ></div>
+
+      </main>
+
+
+      <!-- YENİ HASTA BUTONU -->
+
+      <button
+        id="addPatientButton"
+        class="floating-button"
+      >
+        + Yeni Hasta
       </button>
 
-      <button class="btn btn-save" onclick="addPatient()">
-        Kaydet
-      </button>
+    </section>
+
+
+
+    <!-- HASTA DETAY SAYFASI -->
+
+    <section
+      id="patientPage"
+      class="page hidden"
+    >
+
+      <header class="detail-header">
+
+        <button
+          id="backButton"
+          class="back-button"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1 id="detailPatientName">
+            Hasta
+          </h1>
+
+          <p id="detailPatientPhone">
+          </p>
+        </div>
+
+      </header>
+
+
+      <main class="container">
+
+        <!-- HASTA BİLGİLERİ -->
+
+        <div class="info-card">
+
+          <h2>Hasta Bilgileri</h2>
+
+          <p>
+            Haftalık ücret:
+            <strong id="detailPatientPrice">
+              -
+            </strong>
+          </p>
+
+        </div>
+
+
+        <!-- YENİ ÖDEME -->
+
+        <div class="payment-card">
+
+          <h2>Ödeme Ekle</h2>
+
+
+          <label for="paymentDate">
+            Tarih
+          </label>
+
+          <input
+            type="date"
+            id="paymentDate"
+          >
+
+
+          <label for="paymentAmount">
+            Tutar
+          </label>
+
+          <input
+            type="number"
+            id="paymentAmount"
+            placeholder="Örn. 750"
+          >
+
+
+          <button
+            id="savePaymentButton"
+            class="primary-button"
+          >
+            Ödemeyi Kaydet
+          </button>
+
+        </div>
+
+
+        <!-- ÖDEME GEÇMİŞİ -->
+
+        <div class="history-card">
+
+          <h2>Ödeme Geçmişi</h2>
+
+          <div
+            id="paymentHistory"
+          ></div>
+
+        </div>
+
+      </main>
+
+    </section>
+
+  </div>
+
+
+
+  <!-- HASTA EKLEME MODALI -->
+
+  <div
+    id="patientModal"
+    class="modal hidden"
+  >
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>Yeni Hasta</h2>
+
+        <button
+          id="closeModalButton"
+          class="close-button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <label for="patientName">
+        Ad Soyad
+      </label>
+
+      <input
+        type="text"
+        id="patientName"
+        placeholder="Örn. Ahmet Yılmaz"
+      >
+
+
+      <label for="patientPhone">
+        Telefon
+      </label>
+
+      <input
+        type="tel"
+        id="patientPhone"
+        placeholder="05xx xxx xx xx"
+      >
+
+
+      <label for="patientPrice">
+        Haftalık Ücret
+      </label>
+
+      <input
+        type="number"
+        id="patientPrice"
+        placeholder="Örn. 750"
+      >
+
+
+      <div class="modal-buttons">
+
+        <button
+          id="cancelPatientButton"
+          class="secondary-button"
+        >
+          İptal
+        </button>
+
+        <button
+          id="savePatientButton"
+          class="primary-button"
+        >
+          Hastayı Kaydet
+        </button>
+
+      </div>
+
     </div>
 
   </div>
 
-</div>
 
-<script>
 
-  let patients = JSON.parse(
-    localStorage.getItem("patients")
-  ) || [];
+  <!-- JAVASCRIPT -->
 
-  function savePatients() {
-    localStorage.setItem(
-      "patients",
-      JSON.stringify(patients)
-    );
-  }
+  <script src="app.js"></script>
 
-  function renderPatients() {
 
-    const list = document.getElementById("patientList");
-    const search = document
-      .getElementById("searchInput")
-      .value
-      .toLowerCase()
-      .trim();
+  <!-- SERVICE WORKER -->
 
-    const filtered = patients.filter(patient =>
-      patient.name.toLowerCase().includes(search)
-    );
+  <script>
 
-    if (filtered.length === 0) {
+    if ("serviceWorker" in navigator) {
 
-      list.innerHTML = `
-        <div class="empty">
-          <div class="empty-icon">👤</div>
-          <p>Henüz hasta eklenmedi.</p>
-        </div>
-      `;
+      window.addEventListener(
+        "load",
+        () => {
 
-      return;
+          navigator.serviceWorker
+            .register("sw.js")
+            .catch(error => {
+
+              console.log(
+                "Service Worker hatası:",
+                error
+              );
+
+            });
+
+        }
+      );
+
     }
 
-    list.innerHTML = filtered.map(patient => {
-
-      return `
-        <div
-          class="patient-card"
-          onclick="openPatient(${patient.id})"
-        >
-
-          <div class="patient-name">
-            ${escapeHtml(patient.name)}
-          </div>
-
-          <div class="patient-info">
-            ${patient.phone || "Telefon belirtilmemiş"}
-          </div>
-
-          <div class="patient-info">
-            Haftalık ücret:
-            ${patient.price ? patient.price + " TL" : "-"}
-          </div>
-
-        </div>
-      `;
-
-    }).join("");
-  }
-
-  function openPatientModal() {
-
-    document.getElementById("patientName").value = "";
-    document.getElementById("patientPhone").value = "";
-    document.getElementById("patientPrice").value = "";
-
-    document
-      .getElementById("patientModal")
-      .classList.add("active");
-
-    setTimeout(() => {
-      document.getElementById("patientName").focus();
-    }, 100);
-  }
-
-  function closePatientModal() {
-
-    document
-      .getElementById("patientModal")
-      .classList.remove("active");
-  }
-
-  function addPatient() {
-
-    const name = document
-      .getElementById("patientName")
-      .value
-      .trim();
-
-    const phone = document
-      .getElementById("patientPhone")
-      .value
-      .trim();
-
-    const price = document
-      .getElementById("patientPrice")
-      .value
-      .trim();
-
-    if (!name) {
-      alert("Lütfen hasta adını gir.");
-      return;
-    }
-
-    const patient = {
-
-      id: Date.now(),
-
-      name: name,
-
-      phone: phone,
-
-      price: price,
-
-      payments: []
-
-    };
-
-    patients.push(patient);
-
-    savePatients();
-
-    closePatientModal();
-
-    renderPatients();
-  }
-
-  function openPatient(id) {
-
-    /*
-      Bir sonraki aşamada burada
-      hastanın detay ekranını açacağız.
-
-      Detay ekranında:
-      - Tarih
-      - Ödeme tutarı
-      - Ödendi / Ödenmedi
-      - Geçmiş ödemeler
-      - Düzenleme
-      - Silme
-      olacak.
-    */
-
-    alert("Hasta detay ekranını bir sonraki adımda ekliyoruz.");
-  }
-
-  function escapeHtml(text) {
-
-    const div = document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-  }
-
-  renderPatients();
-
-</script>
+  </script>
 
 </body>
-</html>
+</html>     
