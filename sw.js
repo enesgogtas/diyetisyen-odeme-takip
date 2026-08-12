@@ -1,5 +1,4 @@
 const CACHE_NAME = "hasta-takip-v3";
-
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
