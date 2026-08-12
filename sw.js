@@ -1,4 +1,4 @@
-const CACHE_NAME = "hasta-takip-v2";
+const CACHE_NAME = "hasta-takip-v3";
 
 const FILES_TO_CACHE = [
   "./",
