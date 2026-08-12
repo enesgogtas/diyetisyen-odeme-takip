@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<title>Diyetisyen Ödeme Takip</title>
+</head>
+<body>
+<header><div><h1>Ödeme Takip</h1><p>Haftalık hasta ödemeleri</p></div><button id="addBtn">+ Hasta</button></header>
+<main>
+<section class="stats"><div><b id="count">0</b><span>Hasta</span></div><div><b id="pending">0</b><span>Bekleyen</span></div><div><b id="late">0</b><span>Geciken</span></div></section>
+<section class="total"><span>Bu haftanın toplamı</span><strong id="total">0 TL</strong></section>
+<div id="list"></div>
+</main>
+<div id="modal" class="modal hidden"><div class="sheet">
+<div class="sheetHead"><h2 id="modalTitle">Hasta Ekle</h2><button id="close">×</button></div>
+<label>Ad Soyad<input id="name"></label>
+<label>Telefon<input id="phone" inputmode="tel"></label>
+<label>Haftalık Ücret (TL)<input id="fee" inputmode="decimal"></label>
+<label>Ödeme Günü<select id="day"></select></label>
+<label>Not<textarea id="note"></textarea></label>
+<div class="actions"><button class="secondary" id="cancel">Vazgeç</button><button id="save">Kaydet</button></div>
+</div></div>
+<script src="app.js"></script>
+</body></html>
