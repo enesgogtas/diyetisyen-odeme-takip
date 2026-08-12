@@ -1,182 +1,108 @@
 // ========================================
-alert("YENİ APP.JS ÇALIŞIYOR - V3");
-// HASTA ÖDEME TAKİP
+// HASTA ÖDEME TAKİP - V3
 // ========================================
+
+alert("YENİ APP.JS ÇALIŞIYOR - V3");
 
 let patients = [];
 let selectedPatientId = null;
-
 
 // ========================================
 // VERİLERİ YÜKLE
 // ========================================
 
 function loadPatients() {
-
   try {
-
-    const saved =
-      localStorage.getItem("patients");
-
-    patients = saved
-      ? JSON.parse(saved)
-      : [];
-
+    const saved = localStorage.getItem("patients");
+    patients = saved ? JSON.parse(saved) : [];
   } catch (error) {
-
-    console.error(
-      "Veriler yüklenemedi:",
-      error
-    );
-
+    console.error("Veriler yüklenemedi:", error);
     patients = [];
   }
 }
-
 
 // ========================================
 // VERİLERİ KAYDET
 // ========================================
 
 function savePatients() {
-
-  localStorage.setItem(
-    "patients",
-    JSON.stringify(patients)
-  );
+  localStorage.setItem("patients", JSON.stringify(patients));
 }
-
 
 // ========================================
 // ELEMENTLER
 // ========================================
 
-const homePage =
-  document.getElementById("homePage");
+const homePage = document.getElementById("homePage");
+const patientPage = document.getElementById("patientPage");
+const patientModal = document.getElementById("patientModal");
+const patientList = document.getElementById("patientList");
+const searchInput = document.getElementById("searchInput");
 
-const patientPage =
-  document.getElementById("patientPage");
+const patientName = document.getElementById("patientName");
+const patientPhone = document.getElementById("patientPhone");
+const patientPrice = document.getElementById("patientPrice");
 
-const patientModal =
-  document.getElementById("patientModal");
+const detailPatientName = document.getElementById("detailPatientName");
+const detailPatientPhone = document.getElementById("detailPatientPhone");
+const detailPatientPrice = document.getElementById("detailPatientPrice");
 
-const patientList =
-  document.getElementById("patientList");
-
-const searchInput =
-  document.getElementById("searchInput");
-
-const patientName =
-  document.getElementById("patientName");
-
-const patientPhone =
-  document.getElementById("patientPhone");
-
-const patientPrice =
-  document.getElementById("patientPrice");
-
-const detailPatientName =
-  document.getElementById("detailPatientName");
-
-const detailPatientPhone =
-  document.getElementById("detailPatientPhone");
-
-const detailPatientPrice =
-  document.getElementById("detailPatientPrice");
-
-const paymentDate =
-  document.getElementById("paymentDate");
-
-const paymentAmount =
-  document.getElementById("paymentAmount");
-
-const paymentHistory =
-  document.getElementById("paymentHistory");
-
+const paymentDate = document.getElementById("paymentDate");
+const paymentAmount = document.getElementById("paymentAmount");
+const paymentHistory = document.getElementById("paymentHistory");
 
 // ========================================
-// BUGÜNÜN TARİHİ
+// TARİH
 // ========================================
 
 function getToday() {
-
   const today = new Date();
 
-  const year =
-    today.getFullYear();
-
-  const month =
-    String(today.getMonth() + 1)
-      .padStart(2, "0");
-
-  const day =
-    String(today.getDate())
-      .padStart(2, "0");
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-
-// ========================================
-// TARİHİ GÖRÜNTÜLE
-// ========================================
-
 function formatDate(date) {
+  if (!date) return "-";
 
-  if (!date) {
-    return "-";
-  }
+  const parts = date.split("-");
 
-  const parts =
-    date.split("-");
-
-  if (parts.length !== 3) {
-    return date;
-  }
+  if (parts.length !== 3) return date;
 
   return `${parts[2]}.${parts[1]}.${parts[0]}`;
 }
 
-
 // ========================================
-// PARA FORMAT
+// PARA
 // ========================================
 
 function formatMoney(amount) {
+  const number = Number(amount) || 0;
 
-  const number =
-    Number(amount) || 0;
-
-  return number.toLocaleString(
-    "tr-TR"
-  ) + " TL";
+  return number.toLocaleString("tr-TR") + " TL";
 }
-
 
 // ========================================
 // HTML GÜVENLİĞİ
 // ========================================
 
 function escapeHtml(text) {
+  const div = document.createElement("div");
 
-  const div =
-    document.createElement("div");
-
-  div.textContent =
-    text ?? "";
+  div.textContent = text ?? "";
 
   return div.innerHTML;
 }
 
-
 // ========================================
-// ANA SAYFAYI GÖSTER
+// ANA SAYFA
 // ========================================
 
 function showHomePage() {
-
   homePage.classList.remove("hidden");
-
   patientPage.classList.add("hidden");
 
   selectedPatientId = null;
@@ -184,40 +110,28 @@ function showHomePage() {
   renderPatients();
 }
 
-
 // ========================================
-// HASTA SAYFASINI GÖSTER
+// HASTA DETAY
 // ========================================
 
 function showPatientPage(patient) {
-
   homePage.classList.add("hidden");
-
   patientPage.classList.remove("hidden");
 
-  selectedPatientId =
-    patient.id;
+  selectedPatientId = patient.id;
 
-  detailPatientName.textContent =
-    patient.name;
-
+  detailPatientName.textContent = patient.name;
   detailPatientPhone.textContent =
     patient.phone || "Telefon yok";
 
   detailPatientPrice.textContent =
-    patient.price
-      ? formatMoney(patient.price)
-      : "-";
+    patient.price ? formatMoney(patient.price) : "-";
 
-  paymentDate.value =
-    getToday();
-
-  paymentAmount.value =
-    patient.price || "";
+  paymentDate.value = getToday();
+  paymentAmount.value = patient.price || "";
 
   renderPaymentHistory(patient);
 }
-
 
 // ========================================
 // HASTA LİSTESİ
@@ -225,133 +139,113 @@ function showPatientPage(patient) {
 
 function renderPatients() {
 
-  const search =
-    searchInput.value
+  const search = searchInput.value
+    .toLowerCase()
+    .trim();
+
+  const filtered = patients.filter(patient =>
+    patient.name
       .toLowerCase()
-      .trim();
-
-  const filtered =
-    patients.filter(patient =>
-      patient.name
-        .toLowerCase()
-        .includes(search)
+      .includes(search)
   );
-
 
   if (filtered.length === 0) {
 
     patientList.innerHTML = `
       <div class="empty-state">
-
-        <div class="icon">
-          👤
-        </div>
+        <div class="icon">👤</div>
 
         <h3>Henüz hasta yok</h3>
 
         <p>
-          Yeni Hasta butonuna
-          basarak hasta ekleyebilirsin.
+          Yeni Hasta butonuna basarak
+          hasta ekleyebilirsin.
         </p>
-
       </div>
     `;
 
     return;
   }
 
+  patientList.innerHTML = filtered.map(patient => {
 
-  patientList.innerHTML =
-    filtered.map(patient => {
+    const payments =
+      Array.isArray(patient.payments)
+        ? patient.payments
+        : [];
 
-      const payments =
-        Array.isArray(patient.payments)
-          ? patient.payments
-          : [];
+    const unpaid =
+      payments.filter(
+        payment => payment.paid !== true
+      ).length;
 
+    let statusHtml = "";
 
-      const unpaid =
-        payments.filter(
-          payment =>
-            payment.paid !== true
-        ).length;
+    if (unpaid > 0) {
 
-
-      let statusHtml = "";
-
-      if (unpaid > 0) {
-
-        statusHtml = `
-          <div class="payment-status unpaid">
-            ${unpaid} ödenmemiş kayıt
-          </div>
-        `;
-
-      } else if (payments.length > 0) {
-
-        statusHtml = `
-          <div class="payment-status paid">
-            ✓ Ödemeler tamam
-          </div>
-        `;
-      }
-
-
-      return `
-
-        <div
-          class="patient-card"
-          data-id="${patient.id}"
-        >
-
-          <h3>
-            ${escapeHtml(patient.name)}
-          </h3>
-
-          <p>
-            📞
-            ${escapeHtml(
-              patient.phone ||
-              "Telefon belirtilmemiş"
-            )}
-          </p>
-
-          <p>
-            💰 Haftalık:
-            ${
-              patient.price
-                ? formatMoney(patient.price)
-                : "-"
-            }
-          </p>
-
-          ${statusHtml}
-
+      statusHtml = `
+        <div class="payment-status unpaid">
+          ${unpaid} ödenmemiş kayıt
         </div>
-
       `;
 
-    }).join("");
+    } else if (payments.length > 0) {
 
+      statusHtml = `
+        <div class="payment-status paid">
+          ✓ Ödemeler tamam
+        </div>
+      `;
+    }
+
+    return `
+      <div
+        class="patient-card"
+        data-id="${patient.id}"
+      >
+
+        <h3>
+          ${escapeHtml(patient.name)}
+        </h3>
+
+        <p>
+          📞 ${escapeHtml(
+            patient.phone ||
+            "Telefon belirtilmemiş"
+          )}
+        </p>
+
+        <p>
+          💰 Haftalık:
+          ${
+            patient.price
+              ? formatMoney(patient.price)
+              : "-"
+          }
+        </p>
+
+        ${statusHtml}
+
+      </div>
+    `;
+
+  }).join("");
 
   document
     .querySelectorAll(".patient-card")
     .forEach(card => {
 
-      card.addEventListener(
-        "click",
-        () => {
+      card.addEventListener("click", () => {
 
-          const id =
-            Number(card.dataset.id);
+        const id =
+          Number(card.dataset.id);
 
-          openPatient(id);
-        }
-      );
+        openPatient(id);
+
+      });
 
     });
 }
-
 
 // ========================================
 // HASTA AÇ
@@ -360,13 +254,9 @@ function renderPatients() {
 function openPatient(id) {
 
   const patient =
-    patients.find(
-      item => item.id === id
-    );
+    patients.find(item => item.id === id);
 
-  if (!patient) {
-    return;
-  }
+  if (!patient) return;
 
   if (!Array.isArray(patient.payments)) {
     patient.payments = [];
@@ -375,42 +265,26 @@ function openPatient(id) {
   showPatientPage(patient);
 }
 
-
 // ========================================
-// HASTA MODALI AÇ
+// HASTA EKLEME PENCERESİ
 // ========================================
 
 function openPatientModal() {
 
   patientName.value = "";
-
   patientPhone.value = "";
-
   patientPrice.value = "";
 
-  patientModal.classList.remove(
-    "hidden"
-  );
+  patientModal.classList.remove("hidden");
 
   setTimeout(() => {
-
     patientName.focus();
-
   }, 100);
 }
 
-
-// ========================================
-// HASTA MODALI KAPAT
-// ========================================
-
 function closePatientModal() {
-
-  patientModal.classList.add(
-    "hidden"
-  );
+  patientModal.classList.add("hidden");
 }
-
 
 // ========================================
 // HASTA EKLE
@@ -427,37 +301,28 @@ function addPatient() {
   const price =
     patientPrice.value.trim();
 
-
   if (!name) {
 
-    alert(
-      "Lütfen hasta adını gir."
-    );
+    alert("Lütfen hasta adını gir.");
 
     patientName.focus();
 
     return;
   }
 
-
   const newPatient = {
 
     id: Date.now(),
 
     name,
-
     phone,
-
     price,
 
     payments: []
 
   };
 
-
-  patients.push(
-    newPatient
-  );
+  patients.push(newPatient);
 
   savePatients();
 
@@ -466,30 +331,21 @@ function addPatient() {
   renderPatients();
 }
 
-
 // ========================================
-// HASTA DÜZENLEME
+// HASTA DÜZENLE
 // ========================================
 
 function editPatient() {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const newName =
-    prompt(
-      "Hasta adı:",
-      patient.name
-    );
-
+    prompt("Hasta adı:", patient.name);
 
   if (
     newName === null ||
@@ -498,18 +354,13 @@ function editPatient() {
     return;
   }
 
-
   const newPhone =
     prompt(
       "Telefon:",
       patient.phone || ""
     );
 
-
-  if (newPhone === null) {
-    return;
-  }
-
+  if (newPhone === null) return;
 
   const newPrice =
     prompt(
@@ -517,27 +368,16 @@ function editPatient() {
       patient.price || ""
     );
 
+  if (newPrice === null) return;
 
-  if (newPrice === null) {
-    return;
-  }
-
-
-  patient.name =
-    newName.trim();
-
-  patient.phone =
-    newPhone.trim();
-
-  patient.price =
-    newPrice.trim();
-
+  patient.name = newName.trim();
+  patient.phone = newPhone.trim();
+  patient.price = newPrice.trim();
 
   savePatients();
 
   showPatientPage(patient);
 }
-
 
 // ========================================
 // HASTA SİL
@@ -547,38 +387,26 @@ function deletePatient() {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const confirmDelete =
     confirm(
       `"${patient.name}" adlı hastayı ve tüm ödeme kayıtlarını silmek istediğine emin misin?`
     );
 
+  if (!confirmDelete) return;
 
-  if (!confirmDelete) {
-    return;
-  }
-
-
-  patients =
-    patients.filter(
-      item =>
-        item.id !== selectedPatientId
-    );
-
+  patients = patients.filter(
+    item => item.id !== selectedPatientId
+  );
 
   savePatients();
 
   showHomePage();
 }
-
 
 // ========================================
 // ÖDEME EKLE
@@ -588,31 +416,20 @@ function savePayment() {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
+  if (!patient) return;
 
-
-  const date =
-    paymentDate.value;
-
-  const amount =
-    paymentAmount.value.trim();
-
+  const date = paymentDate.value;
+  const amount = paymentAmount.value.trim();
 
   if (!date) {
 
-    alert(
-      "Lütfen ödeme tarihini seç."
-    );
+    alert("Lütfen ödeme tarihini seç.");
 
     return;
   }
-
 
   if (
     !amount ||
@@ -626,11 +443,9 @@ function savePayment() {
     return;
   }
 
-
   if (!Array.isArray(patient.payments)) {
     patient.payments = [];
   }
-
 
   const payment = {
 
@@ -644,11 +459,7 @@ function savePayment() {
 
   };
 
-
-  patient.payments.unshift(
-    payment
-  );
-
+  patient.payments.unshift(payment);
 
   savePatients();
 
@@ -659,7 +470,6 @@ function savePayment() {
 
   renderPatients();
 }
-
 
 // ========================================
 // ÖDEME GEÇMİŞİ
@@ -672,22 +482,16 @@ function renderPaymentHistory(patient) {
       ? patient.payments
       : [];
 
-
   if (payments.length === 0) {
 
     paymentHistory.innerHTML = `
-
       <div class="payment-history-empty">
-
         Henüz ödeme kaydı yok.
-
       </div>
-
     `;
 
     return;
   }
-
 
   paymentHistory.innerHTML =
     payments.map(payment => {
@@ -695,9 +499,7 @@ function renderPaymentHistory(patient) {
       const paid =
         payment.paid === true;
 
-
       return `
-
         <div
           class="payment-item"
           data-payment-id="${payment.id}"
@@ -715,12 +517,9 @@ function renderPaymentHistory(patient) {
 
           </div>
 
-
-          <div
-            class="payment-status ${
-              paid ? "paid" : "unpaid"
-            }"
-          >
+          <div class="payment-status ${
+            paid ? "paid" : "unpaid"
+          }">
 
             ${
               paid
@@ -729,7 +528,6 @@ function renderPaymentHistory(patient) {
             }
 
           </div>
-
 
           <div class="payment-actions">
 
@@ -753,14 +551,12 @@ function renderPaymentHistory(patient) {
                 `
             }
 
-
             <button
               class="edit-button"
               onclick="editPayment(${payment.id})"
             >
               Düzenle
             </button>
-
 
             <button
               class="delete-button"
@@ -772,47 +568,36 @@ function renderPaymentHistory(patient) {
           </div>
 
         </div>
-
       `;
 
     }).join("");
 }
 
-
 // ========================================
-// ÖDENDİ YAP
+// ÖDENDİ
 // ========================================
 
 function markPaymentPaid(paymentId) {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const payment =
     patient.payments.find(
-      item =>
-        item.id === paymentId
+      item => item.id === paymentId
     );
 
-  if (!payment) {
-    return;
-  }
-
+  if (!payment) return;
 
   payment.paid = true;
 
   payment.paidAt =
     new Date().toISOString();
 
-
   savePatients();
 
   renderPaymentHistory(patient);
@@ -820,39 +605,29 @@ function markPaymentPaid(paymentId) {
   renderPatients();
 }
 
-
 // ========================================
-// ÖDENMEDİ YAP
+// ÖDENMEDİ
 // ========================================
 
 function markPaymentUnpaid(paymentId) {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const payment =
     patient.payments.find(
-      item =>
-        item.id === paymentId
+      item => item.id === paymentId
     );
 
-  if (!payment) {
-    return;
-  }
-
+  if (!payment) return;
 
   payment.paid = false;
 
   delete payment.paidAt;
-
 
   savePatients();
 
@@ -860,7 +635,6 @@ function markPaymentUnpaid(paymentId) {
 
   renderPatients();
 }
-
 
 // ========================================
 // ÖDEME DÜZENLE
@@ -870,25 +644,17 @@ function editPayment(paymentId) {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const payment =
     patient.payments.find(
-      item =>
-        item.id === paymentId
+      item => item.id === paymentId
     );
 
-  if (!payment) {
-    return;
-  }
-
+  if (!payment) return;
 
   const newDate =
     prompt(
@@ -896,11 +662,7 @@ function editPayment(paymentId) {
       payment.date
     );
 
-
-  if (newDate === null) {
-    return;
-  }
-
+  if (newDate === null) return;
 
   const newAmount =
     prompt(
@@ -908,11 +670,7 @@ function editPayment(paymentId) {
       payment.amount
     );
 
-
-  if (newAmount === null) {
-    return;
-  }
-
+  if (newAmount === null) return;
 
   if (
     !newDate.trim() ||
@@ -927,19 +685,16 @@ function editPayment(paymentId) {
     return;
   }
 
-
   payment.date =
     newDate.trim();
 
   payment.amount =
     Number(newAmount);
 
-
   savePatients();
 
   renderPaymentHistory(patient);
 }
-
 
 // ========================================
 // ÖDEME SİL
@@ -949,43 +704,29 @@ function deletePayment(paymentId) {
 
   const patient =
     patients.find(
-      item =>
-        item.id === selectedPatientId
+      item => item.id === selectedPatientId
     );
 
-  if (!patient) {
-    return;
-  }
-
+  if (!patient) return;
 
   const payment =
     patient.payments.find(
-      item =>
-        item.id === paymentId
+      item => item.id === paymentId
     );
 
-  if (!payment) {
-    return;
-  }
-
+  if (!payment) return;
 
   const confirmDelete =
     confirm(
       "Bu ödeme kaydını silmek istediğine emin misin?"
     );
 
-
-  if (!confirmDelete) {
-    return;
-  }
-
+  if (!confirmDelete) return;
 
   patient.payments =
     patient.payments.filter(
-      item =>
-        item.id !== paymentId
+      item => item.id !== paymentId
     );
-
 
   savePatients();
 
@@ -993,7 +734,6 @@ function deletePayment(paymentId) {
 
   renderPatients();
 }
-
 
 // ========================================
 // BUTONLAR
@@ -1006,14 +746,12 @@ document
     openPatientModal
   );
 
-
 document
   .getElementById("closeModalButton")
   .addEventListener(
     "click",
     closePatientModal
   );
-
 
 document
   .getElementById("cancelPatientButton")
@@ -1022,14 +760,12 @@ document
     closePatientModal
   );
 
-
 document
   .getElementById("savePatientButton")
   .addEventListener(
     "click",
     addPatient
   );
-
 
 document
   .getElementById("backButton")
@@ -1038,7 +774,6 @@ document
     showHomePage
   );
 
-
 document
   .getElementById("savePaymentButton")
   .addEventListener(
@@ -1046,12 +781,10 @@ document
     savePayment
   );
 
-
 searchInput.addEventListener(
   "input",
   renderPatients
 );
-
 
 // ========================================
 // MODAL DIŞINA BASINCA KAPAT
@@ -1061,17 +794,12 @@ patientModal.addEventListener(
   "click",
   event => {
 
-    if (
-      event.target === patientModal
-    ) {
-
+    if (event.target === patientModal) {
       closePatientModal();
-
     }
 
   }
 );
-
 
 // ========================================
 // BAŞLANGIÇ
@@ -1081,7 +809,4 @@ loadPatients();
 
 renderPatients();
 
-
-// Bugünün tarihini otomatik seç
-paymentDate.value =
-  getToday();
+paymentDate.value = getToday();
