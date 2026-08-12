@@ -1,347 +1,1086 @@
-const KEY = "dietisyen_pwa_patients_v1";
+// ========================================
+// HASTA ÖDEME TAKİP
+// ========================================
 
-const days = [
-  "Pazartesi",
-  "Salı",
-  "Çarşamba",
-  "Perşembe",
-  "Cuma",
-  "Cumartesi",
-  "Pazar"
-];
+let patients = [];
+let selectedPatientId = null;
 
-let patients = JSON.parse(localStorage.getItem(KEY) || "[]");
-let editing = null;
 
-const $ = id => document.getElementById(id);
+// ========================================
+// VERİLERİ YÜKLE
+// ========================================
 
-days.forEach((day, i) => {
-  $("day").insertAdjacentHTML(
-    "beforeend",
-    `<option value="${i + 1}">${day}</option>`
-  );
-});
+function loadPatients() {
 
-function monday(date = new Date()) {
-  const d = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
+  try {
 
-  d.setDate(d.getDate() - (d.getDay() || 7) + 1);
+    const saved =
+      localStorage.getItem("patients");
 
-  return d;
-}
+    patients = saved
+      ? JSON.parse(saved)
+      : [];
 
-function key(date) {
-  return date.toISOString().slice(0, 10);
-}
+  } catch (error) {
 
-function paymentState(patient) {
-  const currentMonday = monday();
+    console.error(
+      "Veriler yüklenemedi:",
+      error
+    );
 
-  const paid =
-    (patient.paidWeeks || []).includes(key(currentMonday));
-
-  if (paid) {
-    return ["Ödendi", "green"];
+    patients = [];
   }
-
-  const dueDate = new Date(currentMonday);
-
-  dueDate.setDate(
-    dueDate.getDate() + patient.day - 1
-  );
-
-  const today = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    new Date().getDate()
-  );
-
-  const due = new Date(
-    dueDate.getFullYear(),
-    dueDate.getMonth(),
-    dueDate.getDate()
-  );
-
-  const daysLate = Math.floor(
-    (today - due) / 86400000
-  );
-
-  if (daysLate > 3) {
-    return ["Gecikti", "red"];
-  }
-
-  return ["Bekliyor", "orange"];
 }
 
-function saveAll() {
+
+// ========================================
+// VERİLERİ KAYDET
+// ========================================
+
+function savePatients() {
+
   localStorage.setItem(
-    KEY,
+    "patients",
     JSON.stringify(patients)
   );
-
-  render();
 }
 
-function render() {
-  $("count").textContent = patients.length;
 
-  let pending = 0;
-  let late = 0;
-  let total = 0;
+// ========================================
+// ELEMENTLER
+// ========================================
 
-  patients.forEach(patient => {
-    const state = paymentState(patient)[0];
+const homePage =
+  document.getElementById("homePage");
 
-    if (state === "Bekliyor") pending++;
-    if (state === "Gecikti") late++;
+const patientPage =
+  document.getElementById("patientPage");
 
-    total += Number(patient.fee) || 0;
-  });
+const patientModal =
+  document.getElementById("patientModal");
 
-  $("pending").textContent = pending;
-  $("late").textContent = late;
+const patientList =
+  document.getElementById("patientList");
 
-  $("total").textContent =
-    Math.round(total).toLocaleString("tr-TR") +
-    " TL";
+const searchInput =
+  document.getElementById("searchInput");
 
-  const list = $("list");
+const patientName =
+  document.getElementById("patientName");
 
-  list.innerHTML = "";
+const patientPhone =
+  document.getElementById("patientPhone");
 
-  if (!patients.length) {
-    list.innerHTML =
-      '<div class="empty">' +
-      "Henüz hasta eklenmedi.<br><br>" +
-      "+ Hasta butonundan ilk kaydı oluştur." +
-      "</div>";
+const patientPrice =
+  document.getElementById("patientPrice");
+
+const detailPatientName =
+  document.getElementById("detailPatientName");
+
+const detailPatientPhone =
+  document.getElementById("detailPatientPhone");
+
+const detailPatientPrice =
+  document.getElementById("detailPatientPrice");
+
+const paymentDate =
+  document.getElementById("paymentDate");
+
+const paymentAmount =
+  document.getElementById("paymentAmount");
+
+const paymentHistory =
+  document.getElementById("paymentHistory");
+
+
+// ========================================
+// BUGÜNÜN TARİHİ
+// ========================================
+
+function getToday() {
+
+  const today = new Date();
+
+  const year =
+    today.getFullYear();
+
+  const month =
+    String(today.getMonth() + 1)
+      .padStart(2, "0");
+
+  const day =
+    String(today.getDate())
+      .padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+
+// ========================================
+// TARİHİ GÖRÜNTÜLE
+// ========================================
+
+function formatDate(date) {
+
+  if (!date) {
+    return "-";
+  }
+
+  const parts =
+    date.split("-");
+
+  if (parts.length !== 3) {
+    return date;
+  }
+
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+
+// ========================================
+// PARA FORMAT
+// ========================================
+
+function formatMoney(amount) {
+
+  const number =
+    Number(amount) || 0;
+
+  return number.toLocaleString(
+    "tr-TR"
+  ) + " TL";
+}
+
+
+// ========================================
+// HTML GÜVENLİĞİ
+// ========================================
+
+function escapeHtml(text) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent =
+    text ?? "";
+
+  return div.innerHTML;
+}
+
+
+// ========================================
+// ANA SAYFAYI GÖSTER
+// ========================================
+
+function showHomePage() {
+
+  homePage.classList.remove("hidden");
+
+  patientPage.classList.add("hidden");
+
+  selectedPatientId = null;
+
+  renderPatients();
+}
+
+
+// ========================================
+// HASTA SAYFASINI GÖSTER
+// ========================================
+
+function showPatientPage(patient) {
+
+  homePage.classList.add("hidden");
+
+  patientPage.classList.remove("hidden");
+
+  selectedPatientId =
+    patient.id;
+
+  detailPatientName.textContent =
+    patient.name;
+
+  detailPatientPhone.textContent =
+    patient.phone || "Telefon yok";
+
+  detailPatientPrice.textContent =
+    patient.price
+      ? formatMoney(patient.price)
+      : "-";
+
+  paymentDate.value =
+    getToday();
+
+  paymentAmount.value =
+    patient.price || "";
+
+  renderPaymentHistory(patient);
+}
+
+
+// ========================================
+// HASTA LİSTESİ
+// ========================================
+
+function renderPatients() {
+
+  const search =
+    searchInput.value
+      .toLowerCase()
+      .trim();
+
+  const filtered =
+    patients.filter(patient =>
+      patient.name
+        .toLowerCase()
+        .includes(search)
+  );
+
+
+  if (filtered.length === 0) {
+
+    patientList.innerHTML = `
+      <div class="empty-state">
+
+        <div class="icon">
+          👤
+        </div>
+
+        <h3>Henüz hasta yok</h3>
+
+        <p>
+          Yeni Hasta butonuna
+          basarak hasta ekleyebilirsin.
+        </p>
+
+      </div>
+    `;
 
     return;
   }
 
-  patients.forEach(patient => {
-    const state = paymentState(patient);
 
-    const initial =
-      (patient.name || "?")
-        .trim()[0]
-        ?.toUpperCase() || "?";
+  patientList.innerHTML =
+    filtered.map(patient => {
 
-    const element =
-      document.createElement("div");
+      const payments =
+        Array.isArray(patient.payments)
+          ? patient.payments
+          : [];
 
-    element.className = "card";
 
-    element.innerHTML = `
-      <div class="avatar">${initial}</div>
+      const unpaid =
+        payments.filter(
+          payment =>
+            payment.paid !== true
+        ).length;
 
-      <div class="info">
 
-        <div class="name">
-          ${escapeHtml(patient.name)}
+      let statusHtml = "";
+
+      if (unpaid > 0) {
+
+        statusHtml = `
+          <div class="payment-status unpaid">
+            ${unpaid} ödenmemiş kayıt
+          </div>
+        `;
+
+      } else if (payments.length > 0) {
+
+        statusHtml = `
+          <div class="payment-status paid">
+            ✓ Ödemeler tamam
+          </div>
+        `;
+      }
+
+
+      return `
+
+        <div
+          class="patient-card"
+          data-id="${patient.id}"
+        >
+
+          <h3>
+            ${escapeHtml(patient.name)}
+          </h3>
+
+          <p>
+            📞
+            ${escapeHtml(
+              patient.phone ||
+              "Telefon belirtilmemiş"
+            )}
+          </p>
+
+          <p>
+            💰 Haftalık:
+            ${
+              patient.price
+                ? formatMoney(patient.price)
+                : "-"
+            }
+          </p>
+
+          ${statusHtml}
+
         </div>
 
-        <div class="sub">
-          ${Number(patient.fee).toLocaleString("tr-TR")}
-          TL / hafta ·
-          ${days[patient.day - 1]}
-        </div>
+      `;
 
-        <div class="status ${state[1]}">
-          ● ${state[0]}
-        </div>
+    }).join("");
+
+
+  document
+    .querySelectorAll(".patient-card")
+    .forEach(card => {
+
+      card.addEventListener(
+        "click",
+        () => {
+
+          const id =
+            Number(card.dataset.id);
+
+          openPatient(id);
+        }
+      );
+
+    });
+}
+
+
+// ========================================
+// HASTA AÇ
+// ========================================
+
+function openPatient(id) {
+
+  const patient =
+    patients.find(
+      item => item.id === id
+    );
+
+  if (!patient) {
+    return;
+  }
+
+  if (!Array.isArray(patient.payments)) {
+    patient.payments = [];
+  }
+
+  showPatientPage(patient);
+}
+
+
+// ========================================
+// HASTA MODALI AÇ
+// ========================================
+
+function openPatientModal() {
+
+  patientName.value = "";
+
+  patientPhone.value = "";
+
+  patientPrice.value = "";
+
+  patientModal.classList.remove(
+    "hidden"
+  );
+
+  setTimeout(() => {
+
+    patientName.focus();
+
+  }, 100);
+}
+
+
+// ========================================
+// HASTA MODALI KAPAT
+// ========================================
+
+function closePatientModal() {
+
+  patientModal.classList.add(
+    "hidden"
+  );
+}
+
+
+// ========================================
+// HASTA EKLE
+// ========================================
+
+function addPatient() {
+
+  const name =
+    patientName.value.trim();
+
+  const phone =
+    patientPhone.value.trim();
+
+  const price =
+    patientPrice.value.trim();
+
+
+  if (!name) {
+
+    alert(
+      "Lütfen hasta adını gir."
+    );
+
+    patientName.focus();
+
+    return;
+  }
+
+
+  const newPatient = {
+
+    id: Date.now(),
+
+    name,
+
+    phone,
+
+    price,
+
+    payments: []
+
+  };
+
+
+  patients.push(
+    newPatient
+  );
+
+  savePatients();
+
+  closePatientModal();
+
+  renderPatients();
+}
+
+
+// ========================================
+// HASTA DÜZENLEME
+// ========================================
+
+function editPatient() {
+
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
+
+  if (!patient) {
+    return;
+  }
+
+
+  const newName =
+    prompt(
+      "Hasta adı:",
+      patient.name
+    );
+
+
+  if (
+    newName === null ||
+    !newName.trim()
+  ) {
+    return;
+  }
+
+
+  const newPhone =
+    prompt(
+      "Telefon:",
+      patient.phone || ""
+    );
+
+
+  if (newPhone === null) {
+    return;
+  }
+
+
+  const newPrice =
+    prompt(
+      "Haftalık ücret:",
+      patient.price || ""
+    );
+
+
+  if (newPrice === null) {
+    return;
+  }
+
+
+  patient.name =
+    newName.trim();
+
+  patient.phone =
+    newPhone.trim();
+
+  patient.price =
+    newPrice.trim();
+
+
+  savePatients();
+
+  showPatientPage(patient);
+}
+
+
+// ========================================
+// HASTA SİL
+// ========================================
+
+function deletePatient() {
+
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
+
+  if (!patient) {
+    return;
+  }
+
+
+  const confirmDelete =
+    confirm(
+      `"${patient.name}" adlı hastayı ve tüm ödeme kayıtlarını silmek istediğine emin misin?`
+    );
+
+
+  if (!confirmDelete) {
+    return;
+  }
+
+
+  patients =
+    patients.filter(
+      item =>
+        item.id !== selectedPatientId
+    );
+
+
+  savePatients();
+
+  showHomePage();
+}
+
+
+// ========================================
+// ÖDEME EKLE
+// ========================================
+
+function savePayment() {
+
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
+
+  if (!patient) {
+    return;
+  }
+
+
+  const date =
+    paymentDate.value;
+
+  const amount =
+    paymentAmount.value.trim();
+
+
+  if (!date) {
+
+    alert(
+      "Lütfen ödeme tarihini seç."
+    );
+
+    return;
+  }
+
+
+  if (
+    !amount ||
+    Number(amount) <= 0
+  ) {
+
+    alert(
+      "Lütfen geçerli bir ödeme tutarı gir."
+    );
+
+    return;
+  }
+
+
+  if (!Array.isArray(patient.payments)) {
+    patient.payments = [];
+  }
+
+
+  const payment = {
+
+    id: Date.now(),
+
+    date,
+
+    amount: Number(amount),
+
+    paid: false
+
+  };
+
+
+  patient.payments.unshift(
+    payment
+  );
+
+
+  savePatients();
+
+  paymentAmount.value =
+    patient.price || "";
+
+  renderPaymentHistory(patient);
+
+  renderPatients();
+}
+
+
+// ========================================
+// ÖDEME GEÇMİŞİ
+// ========================================
+
+function renderPaymentHistory(patient) {
+
+  const payments =
+    Array.isArray(patient.payments)
+      ? patient.payments
+      : [];
+
+
+  if (payments.length === 0) {
+
+    paymentHistory.innerHTML = `
+
+      <div class="payment-history-empty">
+
+        Henüz ödeme kaydı yok.
 
       </div>
 
-      <button class="menu">⋮</button>
     `;
 
-    element.querySelector(".menu").onclick =
-      () => showMenu(patient);
-
-    list.appendChild(element);
-  });
-}
-
-function showMenu(patient) {
-  const choice = prompt(
-    `${patient.name}
-
-1 = Ödeme Alındı
-2 = Düzenle
-3 = Sil`
-  );
-
-  if (choice === "1") {
-    patient.paidWeeks =
-      patient.paidWeeks || [];
-
-    const currentWeek =
-      key(monday());
-
-    if (
-      !patient.paidWeeks.includes(
-        currentWeek
-      )
-    ) {
-      patient.paidWeeks.push(
-        currentWeek
-      );
-    }
-
-    saveAll();
+    return;
   }
 
-  if (choice === "2") {
-    openForm(patient);
-  }
 
-  if (choice === "3") {
-    if (
-      confirm(
-        "Hasta silinsin mi?"
-      )
-    ) {
-      patients =
-        patients.filter(
-          x => x.id !== patient.id
-        );
+  paymentHistory.innerHTML =
+    payments.map(payment => {
 
-      saveAll();
-    }
-  }
+      const paid =
+        payment.paid === true;
+
+
+      return `
+
+        <div
+          class="payment-item"
+          data-payment-id="${payment.id}"
+        >
+
+          <div class="payment-top">
+
+            <div class="payment-date">
+              📅 ${formatDate(payment.date)}
+            </div>
+
+            <div class="payment-amount">
+              ${formatMoney(payment.amount)}
+            </div>
+
+          </div>
+
+
+          <div
+            class="payment-status ${
+              paid ? "paid" : "unpaid"
+            }"
+          >
+
+            ${
+              paid
+                ? "✓ Ödendi"
+                : "✕ Ödenmedi"
+            }
+
+          </div>
+
+
+          <div class="payment-actions">
+
+            ${
+              !paid
+                ? `
+                  <button
+                    class="pay-button"
+                    onclick="markPaymentPaid(${payment.id})"
+                  >
+                    ✓ Ödendi
+                  </button>
+                `
+                : `
+                  <button
+                    class="edit-button"
+                    onclick="markPaymentUnpaid(${payment.id})"
+                  >
+                    ↩ Ödenmedi
+                  </button>
+                `
+            }
+
+
+            <button
+              class="edit-button"
+              onclick="editPayment(${payment.id})"
+            >
+              Düzenle
+            </button>
+
+
+            <button
+              class="delete-button"
+              onclick="deletePayment(${payment.id})"
+            >
+              Sil
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
 }
 
-function openForm(patient = null) {
-  editing = patient;
 
-  $("modalTitle").textContent =
-    patient
-      ? "Hasta Düzenle"
-      : "Hasta Ekle";
+// ========================================
+// ÖDENDİ YAP
+// ========================================
 
-  $("name").value =
-    patient?.name || "";
+function markPaymentPaid(paymentId) {
 
-  $("phone").value =
-    patient?.phone || "";
-
-  $("fee").value =
-    patient?.fee || "";
-
-  $("day").value =
-    patient?.day || 1;
-
-  $("note").value =
-    patient?.note || "";
-
-  $("modal").classList.remove(
-    "hidden"
-  );
-
-  $("name").focus();
-}
-
-function closeForm() {
-  $("modal").classList.add(
-    "hidden"
-  );
-
-  editing = null;
-}
-
-$("addBtn").onclick =
-  () => openForm();
-
-$("close").onclick =
-  closeForm;
-
-$("cancel").onclick =
-  closeForm;
-
-$("save").onclick = () => {
-
-  const name =
-    $("name").value.trim();
-
-  const fee =
-    parseFloat(
-      $("fee").value.replace(",", ".")
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
     );
 
+  if (!patient) {
+    return;
+  }
+
+
+  const payment =
+    patient.payments.find(
+      item =>
+        item.id === paymentId
+    );
+
+  if (!payment) {
+    return;
+  }
+
+
+  payment.paid = true;
+
+  payment.paidAt =
+    new Date().toISOString();
+
+
+  savePatients();
+
+  renderPaymentHistory(patient);
+
+  renderPatients();
+}
+
+
+// ========================================
+// ÖDENMEDİ YAP
+// ========================================
+
+function markPaymentUnpaid(paymentId) {
+
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
+
+  if (!patient) {
+    return;
+  }
+
+
+  const payment =
+    patient.payments.find(
+      item =>
+        item.id === paymentId
+    );
+
+  if (!payment) {
+    return;
+  }
+
+
+  payment.paid = false;
+
+  delete payment.paidAt;
+
+
+  savePatients();
+
+  renderPaymentHistory(patient);
+
+  renderPatients();
+}
+
+
+// ========================================
+// ÖDEME DÜZENLE
+// ========================================
+
+function editPayment(paymentId) {
+
+  const patient =
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
+
+  if (!patient) {
+    return;
+  }
+
+
+  const payment =
+    patient.payments.find(
+      item =>
+        item.id === paymentId
+    );
+
+  if (!payment) {
+    return;
+  }
+
+
+  const newDate =
+    prompt(
+      "Ödeme tarihi (YYYY-AA-GG):",
+      payment.date
+    );
+
+
+  if (newDate === null) {
+    return;
+  }
+
+
+  const newAmount =
+    prompt(
+      "Ödeme tutarı:",
+      payment.amount
+    );
+
+
+  if (newAmount === null) {
+    return;
+  }
+
+
   if (
-    !name ||
-    !fee ||
-    fee <= 0
+    !newDate.trim() ||
+    !newAmount.trim() ||
+    Number(newAmount) <= 0
   ) {
+
     alert(
-      "Ad soyad ve geçerli bir ücret gir."
+      "Geçerli tarih ve tutar gir."
     );
 
     return;
   }
 
+
+  payment.date =
+    newDate.trim();
+
+  payment.amount =
+    Number(newAmount);
+
+
+  savePatients();
+
+  renderPaymentHistory(patient);
+}
+
+
+// ========================================
+// ÖDEME SİL
+// ========================================
+
+function deletePayment(paymentId) {
+
   const patient =
-    editing || {
-      id:
-        Date.now().toString(),
+    patients.find(
+      item =>
+        item.id === selectedPatientId
+    );
 
-      paidWeeks: []
-    };
-
-  Object.assign(
-    patient,
-    {
-      name: name,
-
-      phone:
-        $("phone").value.trim(),
-
-      fee: fee,
-
-      day:
-        Number($("day").value),
-
-      note:
-        $("note").value.trim()
-    }
-  );
-
-  if (!editing) {
-    patients.push(patient);
+  if (!patient) {
+    return;
   }
 
-  saveAll();
 
-  closeForm();
-};
+  const payment =
+    patient.payments.find(
+      item =>
+        item.id === paymentId
+    );
 
-function escapeHtml(text) {
-  return String(text).replace(
-    /[&<>"']/g,
-    character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[character])
-  );
+  if (!payment) {
+    return;
+  }
+
+
+  const confirmDelete =
+    confirm(
+      "Bu ödeme kaydını silmek istediğine emin misin?"
+    );
+
+
+  if (!confirmDelete) {
+    return;
+  }
+
+
+  patient.payments =
+    patient.payments.filter(
+      item =>
+        item.id !== paymentId
+    );
+
+
+  savePatients();
+
+  renderPaymentHistory(patient);
+
+  renderPatients();
 }
 
-render();
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener(
-    "load",
-    () => {
-      navigator.serviceWorker.register(
-        "sw.js"
-      );
+// ========================================
+// BUTONLAR
+// ========================================
+
+document
+  .getElementById("addPatientButton")
+  .addEventListener(
+    "click",
+    openPatientModal
+  );
+
+
+document
+  .getElementById("closeModalButton")
+  .addEventListener(
+    "click",
+    closePatientModal
+  );
+
+
+document
+  .getElementById("cancelPatientButton")
+  .addEventListener(
+    "click",
+    closePatientModal
+  );
+
+
+document
+  .getElementById("savePatientButton")
+  .addEventListener(
+    "click",
+    addPatient
+  );
+
+
+document
+  .getElementById("backButton")
+  .addEventListener(
+    "click",
+    showHomePage
+  );
+
+
+document
+  .getElementById("savePaymentButton")
+  .addEventListener(
+    "click",
+    savePayment
+  );
+
+
+searchInput.addEventListener(
+  "input",
+  renderPatients
+);
+
+
+// ========================================
+// MODAL DIŞINA BASINCA KAPAT
+// ========================================
+
+patientModal.addEventListener(
+  "click",
+  event => {
+
+    if (
+      event.target === patientModal
+    ) {
+
+      closePatientModal();
+
     }
-  );
-}
+
+  }
+);
+
+
+// ========================================
+// BAŞLANGIÇ
+// ========================================
+
+loadPatients();
+
+renderPatients();
+
+
+// Bugünün tarihini otomatik seç
+paymentDate.value =
+  getToday();
